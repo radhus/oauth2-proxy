@@ -792,7 +792,7 @@ func (p *OAuthProxy) SignIn(rw http.ResponseWriter, req *http.Request) {
 //UserInfo endpoint outputs session email and preferred username in JSON format
 func (p *OAuthProxy) UserInfo(rw http.ResponseWriter, req *http.Request) {
 
-	session, err := p.getAuthenticatedSession(rw, req)
+	session, err := p.getAuthenticatedSession(rw, req, p.Validator)
 	if err != nil {
 		http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
@@ -926,7 +926,7 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 
 // AuthenticateOnly checks whether the user is currently logged in
 func (p *OAuthProxy) AuthenticateOnly(rw http.ResponseWriter, req *http.Request) {
-	session, err := p.getAuthenticatedSession(rw, req)
+	session, err := p.getAuthenticatedSession(rw, req, p.Validator)
 	if err != nil {
 		http.Error(rw, "unauthorized request", http.StatusUnauthorized)
 		return
@@ -947,7 +947,7 @@ func (p *OAuthProxy) SkipAuthProxy(rw http.ResponseWriter, req *http.Request) {
 // Proxy proxies the user request if the user is authenticated else it prompts
 // them to authenticate
 func (p *OAuthProxy) Proxy(rw http.ResponseWriter, req *http.Request) {
-	session, err := p.getAuthenticatedSession(rw, req)
+	session, err := p.getAuthenticatedSession(rw, req, p.Validator)
 	switch err {
 	case nil:
 		// we are authenticated
@@ -979,7 +979,7 @@ func (p *OAuthProxy) Proxy(rw http.ResponseWriter, req *http.Request) {
 // getAuthenticatedSession checks whether a user is authenticated and returns a session object and nil error if so
 // Returns nil, ErrNeedsLogin if user needs to login.
 // Set-Cookie headers may be set on the response as a side-effect of calling this method.
-func (p *OAuthProxy) getAuthenticatedSession(rw http.ResponseWriter, req *http.Request) (*sessionsapi.SessionState, error) {
+func (p *OAuthProxy) getAuthenticatedSession(rw http.ResponseWriter, req *http.Request, validator func(string) bool) (*sessionsapi.SessionState, error) {
 	var session *sessionsapi.SessionState
 
 	getSession := p.sessionChain.Then(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -991,7 +991,7 @@ func (p *OAuthProxy) getAuthenticatedSession(rw http.ResponseWriter, req *http.R
 		return nil, ErrNeedsLogin
 	}
 
-	invalidEmail := session != nil && session.Email != "" && !p.Validator(session.Email)
+	invalidEmail := session != nil && session.Email != "" && !validator(session.Email)
 	invalidGroups := session != nil && !p.validateGroups(session.Groups)
 
 	if invalidEmail || invalidGroups {

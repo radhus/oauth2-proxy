@@ -114,7 +114,7 @@ type OAuthProxy struct {
 }
 
 // NewOAuthProxy creates a new instance of OAuthProxy from the options provided
-func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthProxy, error) {
+func NewOAuthProxy(opts *options.Options, validator func(string) bool, validatorMap map[string]func(string) bool) (*OAuthProxy, error) {
 	sessionStore, err := sessions.NewSessionStore(&opts.Session, &opts.Cookie)
 	if err != nil {
 		return nil, fmt.Errorf("error initialising session store: %v", err)
@@ -192,7 +192,7 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 		CookieRefresh:  opts.Cookie.Refresh,
 		CookieSameSite: opts.Cookie.SameSite,
 		Validator:      validator,
-		ValidatorMap:   map[string]func(string) bool{},
+		ValidatorMap:   validatorMap,
 
 		RobotsPath:        "/robots.txt",
 		SignInPath:        fmt.Sprintf("%s/sign_in", opts.ProxyPrefix),

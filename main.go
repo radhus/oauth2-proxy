@@ -52,7 +52,11 @@ func main() {
 	}
 
 	validator := NewValidator(opts.EmailDomains, opts.AuthenticatedEmailsFile)
-	oauthproxy, err := NewOAuthProxy(opts, validator)
+	validatorMap := map[string]func(string) bool{}
+	for name, path := range opts.AuthenticatedEmailsMap {
+		validatorMap[name] = NewValidator(opts.EmailDomains, path)
+	}
+	oauthproxy, err := NewOAuthProxy(opts, validator, validatorMap)
 	if err != nil {
 		logger.Errorf("ERROR: Failed to initialise OAuth2 Proxy: %v", err)
 		os.Exit(1)

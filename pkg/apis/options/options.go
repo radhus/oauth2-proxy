@@ -35,27 +35,28 @@ type Options struct {
 	TLSCertFile        string   `flag:"tls-cert-file" cfg:"tls_cert_file"`
 	TLSKeyFile         string   `flag:"tls-key-file" cfg:"tls_key_file"`
 
-	AuthenticatedEmailsFile  string   `flag:"authenticated-emails-file" cfg:"authenticated_emails_file"`
-	KeycloakGroup            string   `flag:"keycloak-group" cfg:"keycloak_group"`
-	AzureTenant              string   `flag:"azure-tenant" cfg:"azure_tenant"`
-	BitbucketTeam            string   `flag:"bitbucket-team" cfg:"bitbucket_team"`
-	BitbucketRepository      string   `flag:"bitbucket-repository" cfg:"bitbucket_repository"`
-	EmailDomains             []string `flag:"email-domain" cfg:"email_domains"`
-	WhitelistDomains         []string `flag:"whitelist-domain" cfg:"whitelist_domains"`
-	GitHubOrg                string   `flag:"github-org" cfg:"github_org"`
-	GitHubTeam               string   `flag:"github-team" cfg:"github_team"`
-	GitHubRepo               string   `flag:"github-repo" cfg:"github_repo"`
-	GitHubToken              string   `flag:"github-token" cfg:"github_token"`
-	GitHubUsers              []string `flag:"github-user" cfg:"github_users"`
-	GitLabGroup              []string `flag:"gitlab-group" cfg:"gitlab_groups"`
-	GoogleGroups             []string `flag:"google-group" cfg:"google_group"`
-	GoogleAdminEmail         string   `flag:"google-admin-email" cfg:"google_admin_email"`
-	GoogleServiceAccountJSON string   `flag:"google-service-account-json" cfg:"google_service_account_json"`
-	HtpasswdFile             string   `flag:"htpasswd-file" cfg:"htpasswd_file"`
-	DisplayHtpasswdForm      bool     `flag:"display-htpasswd-form" cfg:"display_htpasswd_form"`
-	CustomTemplatesDir       string   `flag:"custom-templates-dir" cfg:"custom_templates_dir"`
-	Banner                   string   `flag:"banner" cfg:"banner"`
-	Footer                   string   `flag:"footer" cfg:"footer"`
+	AuthenticatedEmailsFile  string            `flag:"authenticated-emails-file" cfg:"authenticated_emails_file"`
+	AuthenticatedEmailsMap   map[string]string `flag:"authenticated-emails-map" cfg:"authenticated_emails_map"`
+	KeycloakGroup            string            `flag:"keycloak-group" cfg:"keycloak_group"`
+	AzureTenant              string            `flag:"azure-tenant" cfg:"azure_tenant"`
+	BitbucketTeam            string            `flag:"bitbucket-team" cfg:"bitbucket_team"`
+	BitbucketRepository      string            `flag:"bitbucket-repository" cfg:"bitbucket_repository"`
+	EmailDomains             []string          `flag:"email-domain" cfg:"email_domains"`
+	WhitelistDomains         []string          `flag:"whitelist-domain" cfg:"whitelist_domains"`
+	GitHubOrg                string            `flag:"github-org" cfg:"github_org"`
+	GitHubTeam               string            `flag:"github-team" cfg:"github_team"`
+	GitHubRepo               string            `flag:"github-repo" cfg:"github_repo"`
+	GitHubToken              string            `flag:"github-token" cfg:"github_token"`
+	GitHubUsers              []string          `flag:"github-user" cfg:"github_users"`
+	GitLabGroup              []string          `flag:"gitlab-group" cfg:"gitlab_groups"`
+	GoogleGroups             []string          `flag:"google-group" cfg:"google_group"`
+	GoogleAdminEmail         string            `flag:"google-admin-email" cfg:"google_admin_email"`
+	GoogleServiceAccountJSON string            `flag:"google-service-account-json" cfg:"google_service_account_json"`
+	HtpasswdFile             string            `flag:"htpasswd-file" cfg:"htpasswd_file"`
+	DisplayHtpasswdForm      bool              `flag:"display-htpasswd-form" cfg:"display_htpasswd_form"`
+	CustomTemplatesDir       string            `flag:"custom-templates-dir" cfg:"custom_templates_dir"`
+	Banner                   string            `flag:"banner" cfg:"banner"`
+	Footer                   string            `flag:"footer" cfg:"footer"`
 
 	Cookie  Cookie         `cfg:",squash"`
 	Session SessionOptions `cfg:",squash"`
@@ -152,6 +153,7 @@ func NewOptions() *Options {
 		SkipOIDCDiscovery:                false,
 		Logging:                          loggingDefaults(),
 		OIDCGroupsClaim:                  "groups",
+		AuthenticatedEmailsMap:           map[string]string{},
 	}
 }
 
@@ -195,6 +197,7 @@ func NewFlagSet() *pflag.FlagSet {
 	flagSet.String("client-secret", "", "the OAuth Client Secret")
 	flagSet.String("client-secret-file", "", "the file with OAuth Client Secret")
 	flagSet.String("authenticated-emails-file", "", "authenticate against emails via file (one per line)")
+	flagSet.StringToString("authenticated-emails-map", map[string]string{}, "map of files to authenticate emails against")
 	flagSet.String("htpasswd-file", "", "additionally authenticate against a htpasswd file. Entries must be created with \"htpasswd -B\" for bcrypt encryption")
 	flagSet.Bool("display-htpasswd-form", true, "display username / password login form if an htpasswd file is provided")
 	flagSet.String("custom-templates-dir", "", "path to custom html templates")

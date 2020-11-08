@@ -20,6 +20,7 @@ var _ = Describe("Load", func() {
 		type TestOptions struct {
 			StringOption string              `flag:"string-option" cfg:"string_option"`
 			Sub          TestOptionSubStruct `cfg:",squash"`
+			MapOption    map[string]string   `flag:"map-option" cfg:"map_option"`
 			// Check exported but internal fields do not break loading
 			Internal *string `cfg:",internal"`
 			// Check unexported fields do not break loading
@@ -44,6 +45,7 @@ var _ = Describe("Load", func() {
 		var testOptionsConfigBytes = []byte(`
 			string_option="foo"
 			string_slice_option="a,b,c,d"
+			map_option={i="j",k="l"}
 		`)
 
 		var testOptionsFlagSet *pflag.FlagSet
@@ -62,6 +64,7 @@ var _ = Describe("Load", func() {
 			testOptionsFlagSet = pflag.NewFlagSet("testFlagSet", pflag.ExitOnError)
 			testOptionsFlagSet.String("string-option", "default", "")
 			testOptionsFlagSet.StringSlice("string-slice-option", []string{"a", "b"}, "")
+			testOptionsFlagSet.StringToString("map-option", map[string]string{}, "")
 		})
 
 		DescribeTable("Load",
@@ -120,6 +123,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b", "c", "d"},
 					},
+					MapOption: map[string]string{"i": "j", "k": "l"},
 				},
 			}),
 			Entry("when setting env variables", &testOptionsTableInput{
@@ -134,6 +138,8 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b", "c"},
 					},
+					// TODO: how to set this through env var?
+					MapOption: map[string]string{"i": "j", "k": "l"},
 				},
 			}),
 			Entry("when setting flags", &testOptionsTableInput{
@@ -145,6 +151,7 @@ var _ = Describe("Load", func() {
 				args: []string{
 					"--string-option", "baz",
 					"--string-slice-option", "a,b,c,d,e",
+					"--map-option", "a=b,c=d",
 				},
 				flagSet: func() *pflag.FlagSet { return testOptionsFlagSet },
 				expectedOutput: &TestOptions{
@@ -152,6 +159,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b", "c", "d", "e"},
 					},
+					MapOption: map[string]string{"a": "b", "c": "d"},
 				},
 			}),
 			Entry("when setting flags multiple times", &testOptionsTableInput{
@@ -165,6 +173,8 @@ var _ = Describe("Load", func() {
 					"--string-slice-option", "x",
 					"--string-slice-option", "y",
 					"--string-slice-option", "z",
+					"--map-option", "a=b,c=d",
+					"--map-option", "e=f,g=h",
 				},
 				flagSet: func() *pflag.FlagSet { return testOptionsFlagSet },
 				expectedOutput: &TestOptions{
@@ -172,6 +182,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"x", "y", "z"},
 					},
+					MapOption: map[string]string{"a": "b", "c": "d", "e": "f", "g": "h"},
 				},
 			}),
 			Entry("when setting env variables without a config file", &testOptionsTableInput{
@@ -185,6 +196,8 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b", "c"},
 					},
+					// TODO: how to set this through env var?
+					MapOption: map[string]string{},
 				},
 			}),
 			Entry("when setting flags without a config file", &testOptionsTableInput{
@@ -195,6 +208,7 @@ var _ = Describe("Load", func() {
 				args: []string{
 					"--string-option", "baz",
 					"--string-slice-option", "a,b,c,d,e",
+					"--map-option", "a=b,c=d",
 				},
 				flagSet: func() *pflag.FlagSet { return testOptionsFlagSet },
 				expectedOutput: &TestOptions{
@@ -202,6 +216,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b", "c", "d", "e"},
 					},
+					MapOption: map[string]string{"a": "b", "c": "d"},
 				},
 			}),
 			Entry("when nothing is set it should use flag defaults", &testOptionsTableInput{
@@ -211,6 +226,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b"},
 					},
+					MapOption: map[string]string{},
 				},
 			}),
 			Entry("with an invalid config file", &testOptionsTableInput{
@@ -257,6 +273,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b"},
 					},
+					MapOption:  map[string]string{},
 					unexported: "unexported",
 				},
 			}),
@@ -270,6 +287,7 @@ var _ = Describe("Load", func() {
 					Sub: TestOptionSubStruct{
 						StringSliceOption: []string{"a", "b"},
 					},
+					MapOption: map[string]string{},
 				},
 			}),
 			Entry("with an empty Options struct, should return default values", &testOptionsTableInput{

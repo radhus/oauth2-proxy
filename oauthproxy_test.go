@@ -1477,6 +1477,76 @@ func TestAuthOnlyEndpointSetBasicAuthFalseRequestHeaders(t *testing.T) {
 	assert.Equal(t, 0, len(pcTest.rw.Header().Values("Authorization")), "should not have Authorization header entries")
 }
 
+func TestAuthOnlyEndpointCustomValidatorAccepted(t *testing.T) {
+	test, err := NewAuthOnlyEndpointTest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	query := test.req.URL.Query()
+	query.Add("validator", "test1")
+	test.req.URL.RawQuery = query.Encode()
+
+	called := false
+	test.proxy.ValidatorMap = map[string]func(string) bool{
+		"test1": func(string) bool {
+			called = true
+			return true
+		},
+		"test2": func(string) bool {
+			t.Fatal("Shouldn't be called")
+			return false
+		},
+	}
+
+	created := time.Now()
+	startSession := &sessions.SessionState{
+		Email: "michael.bland@gsa.gov", AccessToken: "my_access_token", CreatedAt: &created}
+	err = test.SaveSession(startSession)
+	assert.NoError(t, err)
+
+	test.proxy.ServeHTTP(test.rw, test.req)
+	assert.Equal(t, http.StatusAccepted, test.rw.Code)
+	bodyBytes, _ := ioutil.ReadAll(test.rw.Body)
+	assert.Equal(t, "", string(bodyBytes))
+	assert.True(t, called)
+}
+
+func TestAuthOnlyEndpointCustomValidatorUnauthorizedOnNoCookieSetError(t *testing.T) {
+	test, err := NewAuthOnlyEndpointTest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	query := test.req.URL.Query()
+	query.Add("validator", "test1")
+	test.req.URL.RawQuery = query.Encode()
+
+	called := false
+	test.proxy.ValidatorMap = map[string]func(string) bool{
+		"test1": func(string) bool {
+			called = true
+			return false
+		},
+		"test2": func(string) bool {
+			t.Fatal("Shouldn't be called")
+			return false
+		},
+	}
+
+	created := time.Now()
+	startSession := &sessions.SessionState{
+		Email: "michael.bland@gsa.gov", AccessToken: "my_access_token", CreatedAt: &created}
+	err = test.SaveSession(startSession)
+	assert.NoError(t, err)
+
+	test.proxy.ServeHTTP(test.rw, test.req)
+	assert.Equal(t, http.StatusUnauthorized, test.rw.Code)
+	bodyBytes, _ := ioutil.ReadAll(test.rw.Body)
+	assert.Equal(t, "unauthorized request\n", string(bodyBytes))
+	assert.True(t, called)
+}
+
 func TestAuthSkippedForPreflightRequests(t *testing.T) {
 	upstreamServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)

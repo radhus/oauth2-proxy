@@ -66,6 +66,7 @@ type OAuthProxy struct {
 	CookieRefresh  time.Duration
 	CookieSameSite string
 	Validator      func(string) bool
+	ValidatorMap   map[string]func(string) bool
 
 	RobotsPath        string
 	SignInPath        string
@@ -191,6 +192,7 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 		CookieRefresh:  opts.Cookie.Refresh,
 		CookieSameSite: opts.Cookie.SameSite,
 		Validator:      validator,
+		ValidatorMap:   map[string]func(string) bool{},
 
 		RobotsPath:        "/robots.txt",
 		SignInPath:        fmt.Sprintf("%s/sign_in", opts.ProxyPrefix),
@@ -924,9 +926,19 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (p *OAuthProxy) getValidatorFromRequest(req *http.Request) func(string) bool {
+	if queryParam := req.URL.Query().Get("validator"); queryParam != "" {
+		if validator, found := p.ValidatorMap[queryParam]; found {
+			return validator
+		}
+	}
+	return p.Validator
+}
+
 // AuthenticateOnly checks whether the user is currently logged in
 func (p *OAuthProxy) AuthenticateOnly(rw http.ResponseWriter, req *http.Request) {
-	session, err := p.getAuthenticatedSession(rw, req, p.Validator)
+	validator := p.getValidatorFromRequest(req)
+	session, err := p.getAuthenticatedSession(rw, req, validator)
 	if err != nil {
 		http.Error(rw, "unauthorized request", http.StatusUnauthorized)
 		return

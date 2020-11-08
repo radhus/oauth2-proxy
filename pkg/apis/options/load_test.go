@@ -204,23 +204,6 @@ var _ = Describe("Load", func() {
 					},
 				},
 			}),
-			Entry("when setting flags without a config file", &testOptionsTableInput{
-				env: map[string]string{
-					"OAUTH2_PROXY_STRING_OPTION":       "bar",
-					"OAUTH2_PROXY_STRING_SLICE_OPTION": "a,b,c",
-				},
-				args: []string{
-					"--string-option", "baz",
-					"--string-slice-option", "a,b,c,d,e",
-				},
-				flagSet: func() *pflag.FlagSet { return testOptionsFlagSet },
-				expectedOutput: &TestOptions{
-					StringOption: "baz",
-					Sub: TestOptionSubStruct{
-						StringSliceOption: []string{"a", "b", "c", "d", "e"},
-					},
-				},
-			}),
 			Entry("when nothing is set it should use flag defaults", &testOptionsTableInput{
 				flagSet: func() *pflag.FlagSet { return testOptionsFlagSet },
 				expectedOutput: &TestOptions{
